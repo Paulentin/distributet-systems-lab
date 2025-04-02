@@ -2,9 +2,12 @@ package com.tutorial.facade.controller;
 
 import com.tutorial.facade.grpc.LogRequest;
 import com.tutorial.facade.service.ConfigServerClient;
+import com.tutorial.facade.service.FacadeService;
 import com.tutorial.facade.service.GrpcLoggingService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,20 +19,12 @@ import java.util.*;
 
 @Slf4j
 @RestController
+@AllArgsConstructor
 public class FacadeController {
 
     public static final String LOGGING_SERVICE = "logging-service";
     private final GrpcLoggingService grpcLoggingService;
-    private final ConfigServerClient configServerClient;
-    private final RestTemplate restTemplate;
-
-    public FacadeController(GrpcLoggingService grpcLoggingService,
-                            ConfigServerClient configServerClient,
-                            RestTemplate restTemplate) {
-        this.grpcLoggingService = grpcLoggingService;
-        this.configServerClient = configServerClient;
-        this.restTemplate = restTemplate;
-    }
+    private final FacadeService facadeService;
 
     @PostMapping("/message")
     @CircuitBreaker(name = LOGGING_SERVICE, fallbackMethod = "handleMessageFallback")
@@ -51,13 +46,6 @@ public class FacadeController {
 
     @GetMapping("/messages")
     public String getAllMessages() {
-        String loggingUrl = configServerClient.pickLoggingServiceRestUrl();
-
-        String messageServiceUrl = configServerClient.pickMessageServiceRestUrl();
-
-        String loggingMessages = restTemplate.getForObject(loggingUrl, String.class);
-        String staticMessage = restTemplate.getForObject(messageServiceUrl, String.class);
-
-        return loggingMessages + "\n" + staticMessage;
+        return facadeService.getAllMessages();
     }
 }

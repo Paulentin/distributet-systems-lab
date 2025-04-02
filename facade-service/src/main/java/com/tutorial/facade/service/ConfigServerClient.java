@@ -8,7 +8,7 @@ import com.tutorial.facade.grpc.LoggingServiceGrpc;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
@@ -19,13 +19,13 @@ import java.util.List;
 @Service
 public class ConfigServerClient {
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final String configServerUrl;
     private final GrpcConfig grpcConfig;
 
-    public ConfigServerClient(RestTemplate restTemplate,
+    public ConfigServerClient(RestClient restClient,
                               @Value("${config.server.url}") String configServerUrl, GrpcConfig grpcConfig) {
-        this.restTemplate = restTemplate;
+        this.restClient = restClient;
         this.configServerUrl = configServerUrl;
         this.grpcConfig = grpcConfig;
     }
@@ -36,7 +36,10 @@ public class ConfigServerClient {
                 .build()
                 .toString();
         try {
-            return restTemplate.getForObject(url, ServiceInfoDto.class);
+            return restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(ServiceInfoDto.class);
         } catch (Exception ex) {
             log.error("Помилка при виклику config-server: {}", ex.getMessage());
             throw new RuntimeException("Не вдалося отримати IP/порти сервісу " + serviceName);
@@ -68,35 +71,4 @@ public class ConfigServerClient {
         throw new RuntimeException("Не вдалося викликати logging-service (gRPC) на жодному з портів: " + lastEx.getMessage());
     }
 
-    public String pickLoggingServiceRestUrl() {
-        ServiceInfoDto info = getServiceInfo("logging-service");
-        if (info == null || info.getRestPorts() == null || info.getRestPorts().isEmpty()) {
-            throw new RuntimeException("Немає REST портів для logging-service");
-        }
-        List<Integer> restPorts = new ArrayList<>(info.getRestPorts());
-        Collections.shuffle(restPorts);
-        int chosenPort = restPorts.getFirst();
-        return UriComponentsBuilder.newInstance()
-                .scheme("http")
-                .host(info.getHost())
-                .port(chosenPort)
-                .path("/messages")
-                .build()
-                .toString();
-    }
-
-    public String pickMessageServiceRestUrl() {
-        ServiceInfoDto info = getServiceInfo("message-service");
-        if (info == null || info.getRestPorts() == null || info.getRestPorts().isEmpty()) {
-            throw new RuntimeException("Немає REST портів для message-service");
-        }
-        int port = info.getRestPorts().getFirst();
-        return UriComponentsBuilder.newInstance()
-                .scheme("http")
-                .host(info.getHost())
-                .port(port)
-                .path("/messages")
-                .build()
-                .toString();
-    }
 }
