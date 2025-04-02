@@ -1,10 +1,9 @@
-package com.tutorial.facade.service;
+package com.tutorial.facade.controller;
 
 import com.tutorial.facade.grpc.LogRequest;
+import com.tutorial.facade.service.ConfigServerClient;
+import com.tutorial.facade.service.GrpcLoggingService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,33 +12,35 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @RestController
-public class FacadeService {
+public class FacadeController {
 
-    private final RestTemplate restTemplate;
+    public static final String LOGGING_SERVICE = "logging-service";
     private final GrpcLoggingService grpcLoggingService;
-    private static final String MESSAGES_SERVICE_URL = "http://localhost:8080/messages";
-    private static final String LOGGING = "http://localhost:8081/messages";
+    private final ConfigServerClient configServerClient;
+    private final RestTemplate restTemplate;
 
-    public FacadeService(RestTemplate restTemplate, GrpcLoggingService grpcLoggingService) {
-        this.restTemplate = restTemplate;
+    public FacadeController(GrpcLoggingService grpcLoggingService,
+                            ConfigServerClient configServerClient,
+                            RestTemplate restTemplate) {
         this.grpcLoggingService = grpcLoggingService;
+        this.configServerClient = configServerClient;
+        this.restTemplate = restTemplate;
     }
 
     @PostMapping("/message")
-    @CircuitBreaker(name = "logging-service", fallbackMethod = "handleMessageFallback")
+    @CircuitBreaker(name = LOGGING_SERVICE, fallbackMethod = "handleMessageFallback")
     public ResponseEntity<UUID> handleMessage(@RequestBody String message) {
         UUID messageId = UUID.randomUUID();
-
-        LogRequest logRequest = LogRequest.newBuilder()
+        LogRequest request = LogRequest.newBuilder()
                 .setId(messageId.toString())
                 .setMessage(message)
                 .build();
 
-        grpcLoggingService.log(logRequest);
+        grpcLoggingService.log(request);
         return ResponseEntity.ok(messageId);
     }
 
@@ -50,8 +51,13 @@ public class FacadeService {
 
     @GetMapping("/messages")
     public String getAllMessages() {
-        String loggingMessages = restTemplate.getForObject(LOGGING, String.class);
-        String staticMessage = restTemplate.getForObject(MESSAGES_SERVICE_URL, String.class);
+        String loggingUrl = configServerClient.pickLoggingServiceRestUrl();
+
+        String messageServiceUrl = configServerClient.pickMessageServiceRestUrl();
+
+        String loggingMessages = restTemplate.getForObject(loggingUrl, String.class);
+        String staticMessage = restTemplate.getForObject(messageServiceUrl, String.class);
+
         return loggingMessages + "\n" + staticMessage;
     }
 }
