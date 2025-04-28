@@ -25,7 +25,7 @@ public class FacadeService {
 
             String loggingUrl = pickServiceRestUrl("logging-service", true);
 
-            String messageServiceUrl = pickServiceRestUrl("message-service", false);
+            String messageServiceUrl = pickServiceRestUrl("message-service", true);
 
             String loggingMessages = restTemplate.getForObject(loggingUrl, String.class);
             String staticMessage = restTemplate.getForObject(messageServiceUrl, String.class);
@@ -37,21 +37,20 @@ public class FacadeService {
     public String pickServiceRestUrl(String serviceName, boolean doShuffle) {
         ServiceInfoDto info = configServerClient.getServiceInfo(serviceName);
         if (CollectionUtils.isEmpty(info.getRestPorts())) {
-            throw new ConfigurationNotFoundException("Немає REST портів для logging-service");
+            throw new ConfigurationNotFoundException("Немає REST портів для " + serviceName);
         }
         List<Integer> restPorts = new ArrayList<>(info.getRestPorts());
         if(doShuffle) {
             Collections.shuffle(restPorts);
         }
-        Collections.shuffle(restPorts);
         return getUrl(restPorts, info);
     }
 
-    private static String getUrl(List<Integer> info, ServiceInfoDto info1) {
-        int port = info.get(0);
+    private static String getUrl(List<Integer> ports, ServiceInfoDto serviceInfo) {
+        int port = ports.get(0);
         return UriComponentsBuilder.newInstance()
                 .scheme("http")
-                .host(info1.getHost())
+                .host(serviceInfo.getHost())
                 .port(port)
                 .path("/messages")
                 .build()

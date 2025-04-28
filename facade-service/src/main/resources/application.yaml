@@ -3,7 +3,7 @@ spring:
     name: facade-service
 
 server:
-  port: 8082
+  port: 8080
 
 resilience4j:
   retry:

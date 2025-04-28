@@ -8,14 +8,18 @@ server:
 services:
   map:
     logging-service:
-      host: localhost
+      host: ${LOGGING_SERVICE_HOST:localhost}
       grpcPorts:
         - 9090
+        - 9091
+        - 9093
       restPorts:
         - 8081
+        - 8082
+        - 8083
 
     message-service:
-      host: localhost
+      host: ${MESSAGE_SERVICE_HOST:localhost}
       restPorts:
         - 8084
         - 8085

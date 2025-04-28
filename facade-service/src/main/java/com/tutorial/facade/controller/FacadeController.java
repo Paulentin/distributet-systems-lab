@@ -1,19 +1,17 @@
 package com.tutorial.facade.controller;
 
 import com.tutorial.facade.grpc.LogRequest;
-import com.tutorial.facade.service.ConfigServerClient;
 import com.tutorial.facade.service.FacadeService;
 import com.tutorial.facade.service.GrpcLoggingService;
+import com.tutorial.facade.service.KafkaMessageService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
@@ -23,18 +21,22 @@ import java.util.*;
 public class FacadeController {
 
     public static final String LOGGING_SERVICE = "logging-service";
+    public static final String MESSAGE_SERVICE = "message-service";
     private final GrpcLoggingService grpcLoggingService;
+    private final KafkaMessageService kafkaMessageService;
     private final FacadeService facadeService;
 
     @PostMapping("/message")
-    @CircuitBreaker(name = LOGGING_SERVICE, fallbackMethod = "handleMessageFallback")
+    @CircuitBreaker(name = MESSAGE_SERVICE, fallbackMethod = "handleMessageFallback")
     public ResponseEntity<UUID> handleMessage(@RequestBody String message) {
         UUID messageId = UUID.randomUUID();
+
+        kafkaMessageService.sendMessage(messageId, message);
+
         LogRequest request = LogRequest.newBuilder()
                 .setId(messageId.toString())
                 .setMessage(message)
                 .build();
-
         grpcLoggingService.log(request);
         return ResponseEntity.ok(messageId);
     }

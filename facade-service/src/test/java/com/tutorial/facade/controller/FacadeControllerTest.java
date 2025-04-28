@@ -3,6 +3,7 @@ package com.tutorial.facade.controller;
 import com.tutorial.facade.grpc.LogRequest;
 import com.tutorial.facade.service.FacadeService;
 import com.tutorial.facade.service.GrpcLoggingService;
+import com.tutorial.facade.service.KafkaMessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -32,12 +33,15 @@ class FacadeControllerTest {
     @Mock
     private FacadeService facadeService;
 
+    @Mock
+    private KafkaMessageService kafkaMessageService;
+
     private FacadeController facadeController;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        facadeController = new FacadeController(grpcLoggingService, facadeService);
+        facadeController = new FacadeController(grpcLoggingService, kafkaMessageService, facadeService);
         mockMvc = MockMvcBuilders.standaloneSetup(facadeController).build();
     }
 
@@ -46,6 +50,7 @@ class FacadeControllerTest {
         // Arrange
         String message = "Test message";
         doNothing().when(grpcLoggingService).log(any(LogRequest.class));
+        doNothing().when(kafkaMessageService).sendMessage(any(), any());
 
         // Act & Assert
         mockMvc.perform(post("/message")
