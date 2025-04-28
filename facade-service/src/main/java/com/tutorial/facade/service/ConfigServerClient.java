@@ -57,9 +57,12 @@ public class ConfigServerClient {
         RuntimeException lastEx = null;
         for (Integer port : ports) {
             try {
+                log.info("Виклик gRPC {} на порту: {}", info.getHost(), port);
                 LoggingServiceGrpc.LoggingServiceBlockingStub stub =
                         grpcConfig.buildStub(info.getHost(), port);
                 LogResponse resp = stub.log(request);
+                log.info("gRPC logging-service: ID: {}, Message: {}",
+                        request.getId(), request.getMessage());
                 if (!resp.getSuccess()) {
                     throw new RuntimeException("Помилка при логуванні");
                 }
