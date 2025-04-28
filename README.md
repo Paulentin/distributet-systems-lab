@@ -14,7 +14,7 @@ The project consists of the following modules:
 
 ## Prerequisites
 
-- Java 21
+- Java 17
 - Maven 3.6+
 
 ## Setup Instructions
@@ -32,7 +32,62 @@ The project consists of the following modules:
 
 ## Launching the Project
 
-The services should be started in the following order:
+### Using Docker (Recommended)
+
+The easiest way to launch all services at once is using Docker Compose:
+
+1. Build the project first:
+   ```bash
+   mvn clean install
+   ```
+
+2. Start all services using Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Verify that all services are running:
+   ```bash
+   docker-compose ps
+   ```
+
+4. To view logs from all services:
+   ```bash
+   docker-compose logs
+   ```
+
+   Or for a specific service:
+   ```bash
+   docker-compose logs <service-name>
+   ```
+
+   Example:
+   ```bash
+   docker-compose logs facade-service
+   ```
+
+5. To stop all services:
+   ```bash
+   docker-compose down
+   ```
+
+### Testing the Distributed System
+
+Once all services are running, you can test the functionality using the following endpoints:
+
+1. Send a message:
+   ```bash
+   curl -X POST -H "Content-Type: text/plain" -d "Hello, Distributed World!" http://localhost:8080/message
+   ```
+
+2. Retrieve all messages:
+   ```bash
+   curl http://localhost:8080/messages
+   ```
+
+### Manual Startup
+
+Alternatively, you can start each service manually in the following order:
 
 1. Start the config-server:
    ```bash
