@@ -1,6 +1,15 @@
 version: '3'
 
 services:
+  consul:
+    image: hashicorp/consul:latest
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: "agent -server -ui -node=server-1 -bootstrap-expect=1 -client=0.0.0.0"
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     environment:
@@ -23,13 +32,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  config-server:
-    build:
-      context: ./config-server
-    ports:
-      - "8888:8888"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
 
   facade-service:
     build:
@@ -38,11 +40,12 @@ services:
       - "8080:8080"
     depends_on:
       - kafka
-      - config-server
+      - consul
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - CONFIG_SERVER_URL=http://config-server:8888
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
 
   logging-service-1:
     build:
@@ -51,11 +54,13 @@ services:
       - "8081:8081"
       - "9090:9090"
     depends_on:
-      - config-server
+      - consul
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=8081
       - GRPC_SERVER_PORT=9090
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
 
   logging-service-2:
     build:
@@ -64,11 +69,13 @@ services:
       - "8082:8082"
       - "9091:9091"
     depends_on:
-      - config-server
+      - consul
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=8082
       - GRPC_SERVER_PORT=9091
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
 
   logging-service-3:
     build:
@@ -77,11 +84,13 @@ services:
       - "8083:8083"
       - "9093:9093"
     depends_on:
-      - config-server
+      - consul
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=8083
       - GRPC_SERVER_PORT=9093
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
 
   message-service-1:
     build:
@@ -90,12 +99,13 @@ services:
       - "8084:8084"
     depends_on:
       - kafka
-      - config-server
+      - consul
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=8084
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - CONFIG_SERVER_URL=http://config-server:8888
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
 
   message-service-2:
     build:
@@ -104,9 +114,10 @@ services:
       - "8085:8085"
     depends_on:
       - kafka
-      - config-server
+      - consul
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=8085
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - CONFIG_SERVER_URL=http://config-server:8888
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500

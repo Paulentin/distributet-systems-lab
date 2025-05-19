@@ -1,6 +1,25 @@
 spring:
   application:
     name: facade-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:consul}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        instanceId: ${spring.application.name}:${server.port}
+        serviceName: ${spring.application.name}
+        register: true
+        registerHealthCheck: true
+        healthCheckPath: /actuator/health
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
 
 server:
   port: 8080
