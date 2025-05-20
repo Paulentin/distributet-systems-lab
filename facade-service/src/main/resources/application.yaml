@@ -1,9 +1,11 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: facade-service
   cloud:
     consul:
-      host: ${CONSUL_HOST:consul}
+      host: ${CONSUL_HOST:localhost}
       port: ${CONSUL_PORT:8500}
       discovery:
         instanceId: ${spring.application.name}:${server.port}
@@ -39,7 +41,3 @@ resilience4j:
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
-
-config:
-  server:
-    url: http://localhost:8888

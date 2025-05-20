@@ -3,7 +3,7 @@ spring:
     name: logging-service
   cloud:
     consul:
-      host: ${CONSUL_HOST:consul}
+      host: ${CONSUL_HOST:localhost}
       port: ${CONSUL_PORT:8500}
       discovery:
         instanceId: ${spring.application.name}:${server.port}
@@ -11,6 +11,12 @@ spring:
         register: true
         registerHealthCheck: true
         healthCheckPath: /actuator/health
+      config:
+        enabled: true
+        format: YAML
+        prefix: hazelcast
+        defaultContext: application
+        profileSeparator: ':'
   management:
     endpoints:
       web:
