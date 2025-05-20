@@ -1,6 +1,30 @@
 spring:
   application:
     name: logging-service
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        instanceId: ${spring.application.name}:${server.port}
+        serviceName: ${spring.application.name}
+        register: true
+        registerHealthCheck: true
+        healthCheckPath: /actuator/health
+      config:
+        enabled: true
+        format: YAML
+        prefix: hazelcast
+        defaultContext: application
+        profileSeparator: ':'
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,metrics
+    endpoint:
+      health:
+        show-details: always
 
 server:
   port: 8081
